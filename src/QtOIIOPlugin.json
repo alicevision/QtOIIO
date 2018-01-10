@@ -1,0 +1,14 @@
+{
+  "Keys": [
+        "jpg", "jpeg",
+        "png",
+        "exr",
+        "bay", "bmq", "cr2", "crw", "cs1", "dc2", "dcr", "dng", "erf", "fff", "hdr", "k25", "kdc", "mdc", "mos", "mrw", "nef", "orf", "pef", "pxn", "raf", "raw", "rdc", "sr2", "srf", "x3f", "arw", "3fr", "cine", "ia", "kc2", "mef", "nrw", "qtk", "rw2", "sti", "rwl", "srw", "drf", "dsc", "ptx", "cap", "iiq", "rwz"
+    ],
+  "MimeTypes": [
+        "image/jpeg", "image/jpeg",
+        "image/png",
+        "image/exr",
+        "image/bay", "image/bmq", "image/cr2", "image/crw", "image/cs1", "image/dc2", "image/dcr", "image/dng", "image/erf", "image/fff", "image/hdr", "image/k25", "image/kdc", "image/mdc", "image/mos", "image/mrw", "image/nef", "image/orf", "image/pef", "image/pxn", "image/raf", "image/raw", "image/rdc", "image/sr2", "image/srf", "image/x3f", "image/arw", "image/3fr", "image/cine", "image/ia", "image/kc2", "image/mef", "image/nrw", "image/qtk", "image/rw2", "image/sti", "image/rwl", "image/srw", "image/drf", "image/dsc", "image/ptx", "image/cap", "image/iiq", "image/rwz"
+    ]
+}
