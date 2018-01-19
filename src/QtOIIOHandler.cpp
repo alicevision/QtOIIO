@@ -14,6 +14,83 @@
 
 namespace oiio = OIIO;
 
+
+
+static float jetr[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
+                         0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
+                         0,      0,      0.0625, 0.1250, 0.1875, 0.2500, 0.3125, 0.3750, 0.4375, 0.5000, 0.5625,
+                         0.6250, 0.6875, 0.7500, 0.8125, 0.8750, 0.9375, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
+                         1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
+                         1.0000, 0.9375, 0.8750, 0.8125, 0.7500, 0.6875, 0.6250, 0.5625, 0.5000};
+
+static float jetg[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0.0625, 0.1250, 0.1875,
+                         0.2500, 0.3125, 0.3750, 0.4375, 0.5000, 0.5625, 0.6250, 0.6875, 0.7500, 0.8125, 0.8750,
+                         0.9375, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
+                         1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.9375, 0.8750, 0.8125, 0.7500,
+                         0.6875, 0.6250, 0.5625, 0.5000, 0.4375, 0.3750, 0.3125, 0.2500, 0.1875, 0.1250, 0.0625,
+                         0,      0,      0,      0,      0,      0,      0,      0,      0};
+
+static float jetb[64] = {0.5625, 0.6250, 0.6875, 0.7500, 0.8125, 0.8750, 0.9375, 1.0000, 1.0000, 1.0000, 1.0000,
+                         1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
+                         1.0000, 1.0000, 0.9375, 0.8750, 0.8125, 0.7500, 0.6875, 0.6250, 0.5625, 0.5000, 0.4375,
+                         0.3750, 0.3125, 0.2500, 0.1875, 0.1250, 0.0625, 0,      0,      0,      0,      0,
+                         0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
+                         0,      0,      0,      0,      0,      0,      0,      0,      0};
+
+struct Color32f
+{
+    Color32f() {}
+    Color32f(float r_, float g_, float b_)
+      : r(r_)
+      , g(g_)
+      , b(b_)
+    {}
+    union {
+        struct
+        {
+            float r, g, b;
+        };
+        float m[3];
+    };
+};
+
+Color32f getColor32fFromJetColorMap(float value)
+{
+    if(value <= 0.0f)
+        return Color32f(0, 0, 0);
+    if(value >= 1.0f)
+        return Color32f(1.0f, 1.0f, 1.0f);
+    float idx_f = value * 63.0f;
+    float fractA, fractB, integral;
+    fractB = std::modf(idx_f, &integral);
+    fractA = 1.0f - fractB;
+    int idx = static_cast<int>(integral);
+    Color32f c;
+    c.r = jetr[idx] * fractA + jetr[idx + 1] * fractB;
+    c.g = jetg[idx] * fractA + jetg[idx + 1] * fractB;
+    c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;
+    return c;
+}
+
+Color32f getColor32fFromJetColorMapClamp(float value)
+{
+    if(value < 0.0f)
+        value = 0.0f;
+    if(value > 1.0f)
+        value = 1.0f;
+    float idx_f = value * 63.0f;
+    float fractA, fractB, integral;
+    fractB = std::modf(idx_f, &integral);
+    fractA = 1.0f - fractB;
+    int idx = static_cast<int>(integral);
+    Color32f c;
+    c.r = jetr[idx] * fractA + jetr[idx + 1] * fractB;
+    c.g = jetg[idx] * fractA + jetg[idx + 1] * fractB;
+    c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;
+    return c;
+}
+
+
 QtOIIOHandler::QtOIIOHandler()
 {
     std::cout << "[QtOIIO] QtOIIOHandler" << std::endl;
@@ -147,15 +224,70 @@ bool QtOIIOHandler::read(QImage *image)
 //        }
 //        inBuf.swap(requestedBuf);
 //    }
-    // if the input is grayscale, we have the option to convert it to a jet color map
+    // if the input is grayscale, we have the option to convert it with a color map
     if(convertGrayscaleToJetColorMap && inSpec.nchannels == 1)
     {
-        const std::string colorMapType = "blue-red"; //"blue-red", "spectrum", "heat";
         oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
         oiio::ImageBuf tmpBuf(requestedSpec);
+        // perceptually uniform: "inferno", "viridis", "magma", "plasma" -- others: "blue-red", "spectrum", "heat"
+        const char* colorMapEnv = std::getenv("QTOIIO_COLORMAP");
+        const std::string colorMapType = colorMapEnv ? colorMapEnv : "plasma";
+        if(colorMapEnv)
+        {
+            std::cout << "[QtOIIO] compute colormap \"" << colorMapType << "\"" << std::endl;
+            oiio::ImageBufAlgo::color_map(tmpBuf, inBuf, 0, colorMapType);
+        }
+        else if(d->fileName().endsWith("_depthMap.exr"))
+        {
+            oiio::ImageBufAlgo::PixelStats stats;
+            oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
 
-        // std::cout << "[QtOIIO] compute colormap \"" << colorMapType << "\"" << std::endl;
-        oiio::ImageBufAlgo::color_map(tmpBuf, inBuf, 0, colorMapType);
+#pragma omp parallel for
+            for(int y = 0; y < inSpec.height; ++y)
+            {
+                for(int x = 0; x < inSpec.width; ++x)
+                {
+                    float depthValue = 0.0f;
+                    inBuf.getpixel(x, y, &depthValue, 1);
+                    float normalizedDepthValue = (depthValue - stats.min[0]) / (stats.max[0] - stats.min[0]);
+                    Color32f color = getColor32fFromJetColorMap(normalizedDepthValue);
+                    tmpBuf.setpixel(x, y, color.m, 3); // set only 3 channels (RGB)
+                }
+            }
+        }
+        else if(d->fileName().endsWith("_nmodMap.png"))
+        {
+            oiio::ImageBufAlgo::PixelStats stats;
+            oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
+            // oiio::ImageBufAlgo::color_map(dst, src, srcchannel, int(knots.size()/3), 3, knots);
+
+#pragma omp parallel for
+            for(int y = 0; y < inSpec.height; ++y)
+            {
+                for(int x = 0; x < inSpec.width; ++x)
+                {
+                    float depthValue = 0.0f;
+                    inBuf.getpixel(x, y, &depthValue, 1);
+                    float normalizedDepthValue = (depthValue - stats.min[0]) / (stats.max[0] - stats.min[0]);
+                    Color32f color = getColor32fFromJetColorMapClamp(normalizedDepthValue);
+                    tmpBuf.setpixel(x, y, color.m, 3); // set only 3 channels (RGB)
+                }
+            }
+        }
+        else
+        {
+#pragma omp parallel for
+            for(int y = 0; y < inSpec.height; ++y)
+            {
+                for(int x = 0; x < inSpec.width; ++x)
+                {
+                    float depthValue = 0.0f;
+                    inBuf.getpixel(x, y, &depthValue, 1);
+                    Color32f color = getColor32fFromJetColorMap(depthValue);
+                    tmpBuf.setpixel(x, y, color.m, 3); // set only 3 channels (RGB)
+                }
+            }
+        }
         // std::cout << "[QtOIIO] compute colormap done" << std::endl;
         inBuf.swap(tmpBuf);
     }
