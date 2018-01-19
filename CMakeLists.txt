@@ -27,5 +27,9 @@ if(Qt5Core_FOUND)
   message(STATUS "Qt5 found.")
 endif()
 
+add_definitions(-DQT_PLUGIN)
+add_definitions(-DQT_SHARED)
+add_definitions(-DQT_NO_DEBUG)
+
 add_subdirectory(src/imageIOHandler)
 

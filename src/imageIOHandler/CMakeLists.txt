@@ -6,10 +6,6 @@ set(SOURCES_files_QtOIIO
     )
 source_group("QtOIIO" FILES ${SOURCES_files_QtOIIO})
 
-add_definitions(-DQT_PLUGIN)
-add_definitions(-DQT_SHARED)
-add_definitions(-DQT_NO_DEBUG)
-
 add_library(QtOIIOPlugin
     SHARED
     ${SOURCES_files_QtOIIO}
