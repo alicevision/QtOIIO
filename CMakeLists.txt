@@ -10,7 +10,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 
 # OpenImageIO
-find_package(OpenImageIO)
+find_package(OpenImageIO REQUIRED)
 if(OPENIMAGEIO_FOUND)
   message(STATUS "OpenImageIO found.")
 else()
@@ -25,8 +25,6 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 if(Qt5Core_FOUND)
   message(STATUS "Qt5 found.")
-else()
-  message(SEND_ERROR "Failed to find Qt5.")
 endif()
 
 add_subdirectory(src)
