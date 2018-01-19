@@ -237,7 +237,7 @@ bool QtOIIOHandler::read(QImage *image)
             std::cout << "[QtOIIO] compute colormap \"" << colorMapType << "\"" << std::endl;
             oiio::ImageBufAlgo::color_map(tmpBuf, inBuf, 0, colorMapType);
         }
-        else if(d->fileName().endsWith("_depthMap.exr"))
+        else if(d->fileName().contains("depthMap"))
         {
             oiio::ImageBufAlgo::PixelStats stats;
             oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
@@ -255,7 +255,7 @@ bool QtOIIOHandler::read(QImage *image)
                 }
             }
         }
-        else if(d->fileName().endsWith("_nmodMap.png"))
+        else if(d->fileName().contains("nmodMap"))
         {
             oiio::ImageBufAlgo::PixelStats stats;
             oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
