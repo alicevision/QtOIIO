@@ -27,5 +27,5 @@ if(Qt5Core_FOUND)
   message(STATUS "Qt5 found.")
 endif()
 
-add_subdirectory(src)
+add_subdirectory(src/imageIOHandler)
 
