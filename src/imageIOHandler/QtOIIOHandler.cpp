@@ -13,6 +13,7 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <iostream>
+#include <memory>
 
 namespace oiio = OIIO;
 
