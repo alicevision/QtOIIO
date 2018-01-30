@@ -32,4 +32,5 @@ add_definitions(-DQT_SHARED)
 add_definitions(-DQT_NO_DEBUG)
 
 add_subdirectory(src/imageIOHandler)
+add_subdirectory(src/depthMapEntity)
 
