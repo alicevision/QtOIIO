@@ -74,5 +74,3 @@ QImageIOHandler *QtOIIOPlugin::create(QIODevice *device, const QByteArray &forma
     handler->setFormat(format);
     return handler;
 }
-
-#include "QtOIIOPlugin.moc"
