@@ -1,0 +1,40 @@
+version: '1.0.{build}'
+
+image: Visual Studio 2015 
+
+configuration:
+  - Release
+
+platform:
+  - x64
+
+environment:
+  QT5: C:\Qt\5.11.0\msvc2015_64 
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+
+install:
+  - vcpkg list
+  - vcpkg install
+        openimageio
+        --triplet %PLATFORM%-windows
+  - vcpkg list
+ 
+before_build:
+    - md build
+    - cd build
+    - cmake .. -G "Visual Studio 14 2015 Win64"
+            -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+            -DCMAKE_PREFIX_PATH=%QT5% 
+            -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake 
+
+build:
+  project: $(APPVEYOR_BUILD_FOLDER)\build\INSTALL.vcxproj
+  verbosity: minimal
+
+# comment the above and uncomment the following to just build the dependencies
+# build_script:
+#  - echo "Dependencies installed."
+ 
+cache:
+  c:\tools\vcpkg\installed\
+ 
