@@ -3,6 +3,9 @@
 QtOIIO is a C++ plugin providing an [OpenImageIO](http://github.com/OpenImageIO/oiio) backend for image IO in Qt.
 It has been developed to visualize RAW images from DSLRs in [Meshroom](https://github.com/alicevision/meshroom), as well as some intermediate files of the [AliceVision](https://github.com/alicevision/AliceVision) framework stored in EXR format (i.e: depthmaps).
 
+Continuous integration:
+* Windows: [![Build status](https://ci.appveyor.com/api/projects/status/te46xg9oan317bdy/branch/develop?svg=true)](https://ci.appveyor.com/project/AliceVision/qtoiio/branch/develop)
+
 ## License
 
 The project is released under MPLv2, see [**COPYING.md**](COPYING.md).
