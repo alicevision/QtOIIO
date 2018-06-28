@@ -77,7 +77,7 @@ bool QtOIIOHandler::read(QImage *image)
     if(!inBuf.initialized())
         throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-    const oiio::ImageSpec& inSpec = inBuf.spec();
+    oiio::ImageSpec inSpec = inBuf.spec();
 
     std::cout << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels << std::endl;
 
@@ -117,6 +117,15 @@ bool QtOIIOHandler::read(QImage *image)
     // check picture channels number
     if(inSpec.nchannels < 3 && inSpec.nchannels != 1)
         throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+
+    if(inBuf.orientation() != 1) // 1 is "normal", no re-orientation to do
+    {
+        std::cout << "[QtOIIO] reorient image \"" << path << "\"." << std::endl;
+        oiio::ImageBuf reorientedBuf;
+        oiio::ImageBufAlgo::reorient(reorientedBuf, inBuf);
+        inBuf.swap(reorientedBuf);
+        inSpec = inBuf.spec();
+    }
 
 //    // convert to grayscale if needed
 //    if(nchannels == 1 && inSpec.nchannels >= 3)
