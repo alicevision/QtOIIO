@@ -9,8 +9,8 @@ platform:
   - x64
 
 environment:
-  QT5: C:\Qt\5.11.0\msvc2015_64 
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  QT5: C:\Qt\5.11.1\msvc2015_64
+  # APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 install:
   - vcpkg list
