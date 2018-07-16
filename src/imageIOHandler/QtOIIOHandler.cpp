@@ -7,6 +7,7 @@
 #include <QFileDevice>
 #include <QVariant>
 #include <QDataStream>
+#include <QDebug>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -19,7 +20,7 @@ namespace oiio = OIIO;
 
 QtOIIOHandler::QtOIIOHandler()
 {
-    std::cout << "[QtOIIO] QtOIIOHandler" << std::endl;
+    qInfo() << "[QtOIIO] QtOIIOHandler";
 }
 
 QtOIIOHandler::~QtOIIOHandler()
@@ -41,10 +42,10 @@ bool QtOIIOHandler::canRead(QIODevice *device)
     QFileDevice* d = dynamic_cast<QFileDevice*>(device);
     if(d)
     {
-        // std::cout << "[QtOIIO] Can read file: " << d->fileName().toStdString() << std::endl;
+        // qDebug() << "[QtOIIO] Can read file: " << d->fileName().toStdString();
         return true;
     }
-    // std::cout << "[QtOIIO] Cannot read." << std::endl;
+    // qDebug() << "[QtOIIO] Cannot read.";
     return false;
 }
 
@@ -52,16 +53,16 @@ bool QtOIIOHandler::read(QImage *image)
 {
     bool convertGrayscaleToJetColorMap = true; // how to expose it as an option?
 
-    // std::cout << "[QtOIIO] Read Image" << std::endl;
+    // qDebug() << "[QtOIIO] Read Image";
     QFileDevice* d = dynamic_cast<QFileDevice*>(device());
     if(!d)
     {
-        std::cout << "[QtOIIO] Read image failed (not a FileDevice)." << std::endl;
+        qWarning() << "[QtOIIO] Read image failed (not a FileDevice).";
         return false;
     }
     const std::string path = d->fileName().toStdString();
 
-    std::cout << "[QtOIIO] Read image: " << path << std::endl;
+    qInfo() << "[QtOIIO] Read image: " << path.c_str();
     // check requested channels number
     // assert(nchannels == 1 || nchannels >= 3);
 
@@ -79,7 +80,7 @@ bool QtOIIOHandler::read(QImage *image)
 
     oiio::ImageSpec inSpec = inBuf.spec();
 
-    std::cout << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels << std::endl;
+    qDebug() << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels;
 
     int nchannels = 0;
     QImage::Format format = QImage::NImageFormats;
@@ -108,11 +109,11 @@ bool QtOIIOHandler::read(QImage *image)
     }
     else
     {
-        std::cout << "[QtOIIO] failed to load \"" << path << "\", nchannels=" << inSpec.nchannels << std::endl;
+        qWarning() << "[QtOIIO] failed to load \"" << path.c_str() << "\", nchannels=" << inSpec.nchannels;
         return false;
     }
 
-    std::cout << "[QtOIIO] nchannels:" << nchannels << std::endl;
+    qDebug() << "[QtOIIO] nchannels:" << nchannels;
 
     // check picture channels number
     if(inSpec.nchannels < 3 && inSpec.nchannels != 1)
@@ -120,7 +121,7 @@ bool QtOIIOHandler::read(QImage *image)
 
     if(inBuf.orientation() != 1) // 1 is "normal", no re-orientation to do
     {
-        std::cout << "[QtOIIO] reorient image \"" << path << "\"." << std::endl;
+        qDebug() << "[QtOIIO] reorient image \"" << path.c_str() << "\".";
         oiio::ImageBuf reorientedBuf;
         oiio::ImageBufAlgo::reorient(reorientedBuf, inBuf);
         inBuf.swap(reorientedBuf);
@@ -169,7 +170,7 @@ bool QtOIIOHandler::read(QImage *image)
         const std::string colorMapType = colorMapEnv ? colorMapEnv : "plasma";
         if(colorMapEnv)
         {
-            std::cout << "[QtOIIO] compute colormap \"" << colorMapType << "\"" << std::endl;
+            qDebug() << "[QtOIIO] compute colormap \"" << colorMapType.c_str() << "\"";
             oiio::ImageBufAlgo::color_map(tmpBuf, inBuf, 0, colorMapType);
         }
         else if(d->fileName().contains("depthMap"))
@@ -223,24 +224,24 @@ bool QtOIIOHandler::read(QImage *image)
                 }
             }
         }
-        // std::cout << "[QtOIIO] compute colormap done" << std::endl;
+        // qDebug() << "[QtOIIO] compute colormap done";
         inBuf.swap(tmpBuf);
     }
 
     // Shuffle channels to convert from OIIO to Qt
     else if(nchannels == 4)
     {
-        // std::cout << "[QtOIIO] shuffle channels" << std::endl;
+        // qDebug() << "[QtOIIO] shuffle channels";
         oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
         oiio::ImageBuf tmpBuf(requestedSpec);
 
         const std::vector<int> channelOrder = {2, 1, 0, 3}; // This one works, not sure why...
         oiio::ImageBufAlgo::channels(tmpBuf, inBuf, 4, &channelOrder.front());
         inBuf.swap(tmpBuf);
-        // std::cout << "[QtOIIO] shuffle channels done" << std::endl;
+        // qDebug() << "[QtOIIO] shuffle channels done";
     }
 
-    // std::cout << "[QtOIIO] create output QImage" << std::endl;
+    // qDebug() << "[QtOIIO] create output QImage";
     QImage result(inSpec.width, inSpec.height, format);
 
     {
@@ -248,12 +249,20 @@ bool QtOIIOHandler::read(QImage *image)
         exportROI.chbegin = 0;
         exportROI.chend = nchannels;
 
-        // std::cout << "[QtOIIO] fill output QImage" << std::endl;
+        // qDebug() << "[QtOIIO] fill output QImage";
         inBuf.get_pixels(exportROI, typeDesc, result.bits());
     }
 
-    // std::cout << "[QtOIIO] Image loaded: \"" << path << "\"" << std::endl;
-    *image = result;
+    // qDebug() << "[QtOIIO] Image loaded: \"" << path << "\"";
+    if (_scaledSize.isValid())
+    {
+        qDebug() << "[QTOIIO] _scaledSize: " << _scaledSize.width() << "x" << _scaledSize.height();
+        *image = result.scaled(_scaledSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    else
+    {
+        *image = result;
+    }
     return true;
 }
 
@@ -269,6 +278,9 @@ bool QtOIIOHandler::supportsOption(ImageOption option) const
         return true;
     if(option == TransformedByDefault)
         return true;
+    if(option == ScaledSize)
+        return true;
+
     return false;
 }
 
@@ -279,7 +291,7 @@ QVariant QtOIIOHandler::option(ImageOption option) const
         QFileDevice* d = dynamic_cast<QFileDevice*>(device());
         if(!d)
         {
-            std::cout << "[QtOIIO] Read image failed (not a FileDevice)." << std::endl;
+            qDebug() << "[QtOIIO] Read image failed (not a FileDevice).";
             return false;
         }
         std::string path = d->fileName().toStdString();
@@ -290,13 +302,18 @@ QVariant QtOIIOHandler::option(ImageOption option) const
 
         return QSize(imageInput->spec().width, imageInput->spec().height);
     }
-    return QVariant();
+    return QImageIOHandler::option(option);
 }
 
 void QtOIIOHandler::setOption(ImageOption option, const QVariant &value)
 {
     Q_UNUSED(option);
     Q_UNUSED(value);
+    if (option == ScaledSize && value.isValid())
+    {
+        _scaledSize = value.value<QSize>();
+        qDebug() << "[QTOIIO] setOption scaledSize: " << _scaledSize.width() << "x" << _scaledSize.height();
+    }
 }
 
 QByteArray QtOIIOHandler::name() const

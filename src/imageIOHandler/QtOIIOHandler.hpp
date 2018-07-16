@@ -19,4 +19,6 @@ public:
     QVariant option(ImageOption option) const;
     void setOption(ImageOption option, const QVariant &value);
     bool supportsOption(ImageOption option) const;
+
+    QSize _scaledSize;
 };

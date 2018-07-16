@@ -3,6 +3,7 @@
 
 #include <qimageiohandler.h>
 #include <QFileDevice>
+#include <QDebug>
 
 #include <OpenImageIO/imageio.h>
 
@@ -12,30 +13,29 @@ namespace oiio = OIIO;
 
 QtOIIOPlugin::QtOIIOPlugin()
 {
-    std::cout << "[QtOIIO] init supported extensions." << std::endl;
+    qInfo() << "[QtOIIO] init supported extensions.";
 
     std::string extensionsListStr;
     oiio::getattribute("extension_list", extensionsListStr);
 
     QString extensionsListQStr(QString::fromStdString(extensionsListStr));
-
-    std::cout << "[QtOIIO] extensionsListQStr: " << extensionsListQStr.toStdString() << "." << std::endl;
-    std::cout << "[QtOIIO] extensionsListStr: " << extensionsListStr << "." << std::endl;
+    // qInfo() << "[QtOIIO] extensionsListStr: " << extensionsListQStr << ".";
 
     QStringList formats = extensionsListQStr.split(';');
     for(auto& format: formats)
     {
-        std::cout << "[QtOIIO] format: " << format.toStdString() << "." << std::endl;
+        qInfo() << "[QtOIIO] format: " << format << ".";
         QStringList keyValues = format.split(":");
         if(keyValues.size() != 2)
         {
-            std::cout << "[QtOIIO] warning: split OIIO keys: " << keyValues.size() << " for " << format.toStdString() << "." << std::endl;
+            qInfo() << "[QtOIIO] warning: split OIIO keys: " << keyValues.size() << " for " << format << ".";
         }
         else
         {
             _supportedExtensions += keyValues[1].split(",");
         }
     }
+    qInfo() << "[QtOIIO] supported extensions: " << _supportedExtensions.join(", ");
     std::cout << "[QtOIIO] supported extensions: " << _supportedExtensions.join(", ").toStdString() << std::endl;
 }
 
@@ -55,7 +55,7 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
 
     if (_supportedExtensions.contains(format, Qt::CaseSensitivity::CaseInsensitive))
     {
-        std::cout << "[QtOIIO] Capabilities: extension \"" << QString(format).toStdString() << "\" supported." << std::endl;
+        qInfo() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" supported.";
 //        oiio::ImageOutput *out = oiio::ImageOutput::create(path); // TODO: when writting will be implemented
         Capabilities capabilities(CanRead);
 //        if(out)
@@ -63,7 +63,7 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
 //        oiio::ImageOutput::destroy(out);
         return capabilities;
     }
-    std::cout << "[QtOIIO] Capabilities: extension \"" << QString(format).toStdString() << "\" not supported" << std::endl;
+    qInfo() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" not supported";
     return 0;
 }
 

@@ -19,6 +19,7 @@
 #include <Qt3DRender/QBuffer>
 #include <Qt3DCore/QTransform>
 
+#include <QDebug>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -71,7 +72,8 @@ DepthMapEntity::DepthMapEntity(Qt3DCore::QNode* parent)
     : Qt3DCore::QEntity(parent)
     , _displayMode(DisplayMode::Unknown)
 {
-    std::cout << "[DepthMapEntity] Constructor" << std::endl;
+    std::cout << "[DepthMapEntity] DepthMapEntity" << std::endl;
+    qDebug() << "[DepthMapEntity] DepthMapEntity";
     setDisplayMode(DisplayMode::Triangles);
 }
 
@@ -522,11 +524,11 @@ bool validTriangleRatio(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 // private
 void DepthMapEntity::loadDepthMap()
 {
-    std::cout << "[DepthMapEntity] loadDepthMap" << std::endl;
+    qDebug() << "[DepthMapEntity] loadDepthMap";
     if(!_source.isValid())
         return;
 
-    std::cout << "[DepthMapEntity] Load Depth Map: " << _source.path().toStdString() << std::endl;
+    qDebug() << "[DepthMapEntity] Load Depth Map: " << _source.path();
 
     using namespace Qt3DRender;
 
@@ -540,39 +542,39 @@ void DepthMapEntity::loadDepthMap()
     oiio::ImageBuf inBuf(_source.path().toStdString(), 0, 0, NULL, &configSpec);
     const oiio::ImageSpec& inSpec = inBuf.spec();
 
-    std::cout << "[DepthMapEntity] Image Size: " << inSpec.width << "x" << inSpec.height << std::endl;
+    qDebug() << "[DepthMapEntity] Image Size: " << inSpec.width << "x" << inSpec.height;
 
     point3d CArr;
     const oiio::ParamValue * cParam = inSpec.find_attribute("AliceVision:CArr"); // , oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3));
     if(cParam)
     {
-        std::cout << "[DepthMapEntity] CArr: " << cParam->nvalues() << std::endl;
+        qDebug() << "[DepthMapEntity] CArr: " << cParam->nvalues();
         std::copy_n((const double*)cParam->data(), 3, CArr.m);
         CArr.doprintf();
     }
     else
     {
-        std::cout << "[DepthMapEntity] missing metadata CArr." << std::endl;
+        qDebug() << "[DepthMapEntity] missing metadata CArr.";
     }
 
     matrix3x3 iCamArr;
     const oiio::ParamValue * icParam = inSpec.find_attribute("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33));
     if(icParam)
     {
-        std::cout << "[DepthMapEntity] iCamArr: " << icParam->nvalues() << std::endl;
+        qDebug() << "[DepthMapEntity] iCamArr: " << icParam->nvalues();
         std::copy_n((const double*)icParam->data(), 9, iCamArr.m);
         iCamArr.doprintf();
     }
     else
     {
-        std::cout << "[DepthMapEntity] missing metadata iCamArr." << std::endl;
+        qDebug() << "[DepthMapEntity] missing metadata iCamArr.";
     }
 
     QString simPath = _source.path().replace("depthMap", "simMap");
     oiio::ImageBuf simBuf;
     if(QUrl(simPath).isValid())
     {
-        std::cout << "[DepthMapEntity] Load Sim Map: " << simPath.toStdString() << std::endl;
+        qDebug() << "[DepthMapEntity] Load Sim Map: " << simPath;
         simBuf.reset(simPath.toStdString(), 0, 0, NULL, &configSpec);
     }
     const oiio::ImageSpec& simSpec = simBuf.spec();
@@ -621,7 +623,7 @@ void DepthMapEntity::loadDepthMap()
         }
     }
 
-    std::cout << "[DepthMapEntity] Valid Depth Values: " << positions.size() << std::endl;
+    qDebug() << "[DepthMapEntity] Valid Depth Values: " << positions.size();
 
     // create a new geometry renderer
     QGeometryRenderer* customMeshRenderer = new QGeometryRenderer;
@@ -660,7 +662,7 @@ void DepthMapEntity::loadDepthMap()
                 }
             }
         }
-        std::cout << "[DepthMapEntity] Nb triangles: " << trianglesIndexes.size() << std::endl;
+        qDebug() << "[DepthMapEntity] Nb triangles: " << trianglesIndexes.size();
     }
 #ifndef QTOIIO_DEPTHMAP_USE_INDEXES
     if(_displayMode == DisplayMode::Triangles)
@@ -718,7 +720,7 @@ void DepthMapEntity::loadDepthMap()
         colorDataBuffer->setData(colorData);
 
         QAttribute* colorAttribute = new QAttribute;
-        std::cout << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DRender::QAttribute::defaultColorAttributeName().toStdString() << std::endl;
+        qDebug() << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DRender::QAttribute::defaultColorAttributeName().toStdString();
         colorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
         colorAttribute->setAttributeType(QAttribute::VertexAttribute);
         colorAttribute->setBuffer(colorDataBuffer);
@@ -745,7 +747,7 @@ void DepthMapEntity::loadDepthMap()
         colorDataBuffer->setData(colorData);
 
         QAttribute* colorAttribute = new QAttribute;
-        std::cout << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DRender::QAttribute::defaultColorAttributeName().toStdString() << std::endl;
+        qDebug() << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DRender::QAttribute::defaultColorAttributeName();
         colorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
         colorAttribute->setAttributeType(QAttribute::VertexAttribute);
         colorAttribute->setBuffer(colorDataBuffer);
@@ -851,7 +853,7 @@ void DepthMapEntity::loadDepthMap()
     addComponent(_cloudMaterial);
     addComponent(transform);
     addComponent(customMeshRenderer);
-    std::cout << "DepthMapEntity: Mesh Renderer added." << std::endl;
+    qDebug() << "DepthMapEntity: Mesh Renderer added.";
 }
 
 } // namespace
