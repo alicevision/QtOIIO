@@ -253,7 +253,15 @@ bool QtOIIOHandler::read(QImage *image)
     }
 
     // std::cout << "[QtOIIO] Image loaded: \"" << path << "\"" << std::endl;
-    *image = result;
+    if (_scaledSize.isValid())
+    {
+        std::cout << "[QTOIIO] _scaledSize: " << _scaledSize.width() << "x" << _scaledSize.height() << std::endl;
+        *image = result.scaled(_scaledSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    else
+    {
+        *image = result;
+    }
     return true;
 }
 
@@ -269,6 +277,9 @@ bool QtOIIOHandler::supportsOption(ImageOption option) const
         return true;
     if(option == TransformedByDefault)
         return true;
+    if(option == ScaledSize)
+        return true;
+
     return false;
 }
 
@@ -290,13 +301,18 @@ QVariant QtOIIOHandler::option(ImageOption option) const
 
         return QSize(imageInput->spec().width, imageInput->spec().height);
     }
-    return QVariant();
+    return QImageIOHandler::option(option);
 }
 
 void QtOIIOHandler::setOption(ImageOption option, const QVariant &value)
 {
     Q_UNUSED(option);
     Q_UNUSED(value);
+    if (option == ScaledSize && value.isValid())
+    {
+        _scaledSize = value.value<QSize>();
+        std::cout << "[QTOIIO] setOption scaledSize: " << _scaledSize.width() << "x" << _scaledSize.height() << std::endl;
+    }
 }
 
 QByteArray QtOIIOHandler::name() const
