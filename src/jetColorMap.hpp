@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 static float jetr[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
                          0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
