@@ -31,6 +31,9 @@ add_definitions(-DQT_PLUGIN)
 add_definitions(-DQT_SHARED)
 add_definitions(-DQT_NO_DEBUG)
 
+# comment to get qDebug outputs
+add_definitions(-DQT_NO_DEBUG_OUTPUT)
+
 add_subdirectory(src/imageIOHandler)
 add_subdirectory(src/depthMapEntity)
 

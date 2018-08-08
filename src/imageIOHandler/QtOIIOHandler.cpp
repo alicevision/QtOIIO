@@ -20,7 +20,7 @@ namespace oiio = OIIO;
 
 QtOIIOHandler::QtOIIOHandler()
 {
-    qInfo() << "[QtOIIO] QtOIIOHandler";
+    qDebug() << "[QtOIIO] QtOIIOHandler";
 }
 
 QtOIIOHandler::~QtOIIOHandler()

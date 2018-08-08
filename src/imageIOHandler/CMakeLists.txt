@@ -22,9 +22,8 @@ target_link_libraries(QtOIIOPlugin
 if(Qt5Core_FOUND)
   target_link_libraries(QtOIIOPlugin
       PUBLIC
-      Qt5::Core Qt5::Widgets
+      Qt5::Core Qt5::Gui
       )
 endif()
 
 install(TARGETS QtOIIOPlugin DESTINATION imageformats)
-install(FILES QtOIIOPlugin.json DESTINATION imageformats)
