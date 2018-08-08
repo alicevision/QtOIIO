@@ -52,6 +52,14 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
     if(path.empty() || path[0] == ':')
         return 0;
 
+#ifdef QTOIIO_USE_FORMATS_BLACKLIST
+    // For performance sake, let Qt handle natively some formats.
+    static const QStringList blacklist{"jpeg", "jpg", "png", "ico"};
+    if(blacklist.contains(format, Qt::CaseSensitivity::CaseInsensitive))
+    {
+        return 0;
+    }
+#endif
     if (_supportedExtensions.contains(format, Qt::CaseSensitivity::CaseInsensitive))
     {
         qDebug() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" supported.";
