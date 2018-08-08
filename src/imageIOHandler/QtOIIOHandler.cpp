@@ -20,7 +20,7 @@ namespace oiio = OIIO;
 
 QtOIIOHandler::QtOIIOHandler()
 {
-    qInfo() << "[QtOIIO] QtOIIOHandler";
+    qDebug() << "[QtOIIO] QtOIIOHandler";
 }
 
 QtOIIOHandler::~QtOIIOHandler()
@@ -118,15 +118,6 @@ bool QtOIIOHandler::read(QImage *image)
     // check picture channels number
     if(inSpec.nchannels < 3 && inSpec.nchannels != 1)
         throw std::runtime_error("Can't load channels of image file '" + path + "'.");
-
-    if(inBuf.orientation() != 1) // 1 is "normal", no re-orientation to do
-    {
-        qDebug() << "[QtOIIO] reorient image \"" << path.c_str() << "\".";
-        oiio::ImageBuf reorientedBuf;
-        oiio::ImageBufAlgo::reorient(reorientedBuf, inBuf);
-        inBuf.swap(reorientedBuf);
-        inSpec = inBuf.spec();
-    }
 
 //    // convert to grayscale if needed
 //    if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -276,7 +267,7 @@ bool QtOIIOHandler::supportsOption(ImageOption option) const
 {
     if(option == Size)
         return true;
-    if(option == TransformedByDefault)
+    if(option == ImageTransformation)
         return true;
     if(option == ScaledSize)
         return true;
@@ -286,21 +277,44 @@ bool QtOIIOHandler::supportsOption(ImageOption option) const
 
 QVariant QtOIIOHandler::option(ImageOption option) const
 {
-    if (option == Size)
-    {
-        QFileDevice* d = dynamic_cast<QFileDevice*>(device());
+    const auto getImageInput = [](QIODevice* device) -> std::unique_ptr<oiio::ImageInput> {
+        QFileDevice* d = dynamic_cast<QFileDevice*>(device);
         if(!d)
         {
             qDebug() << "[QtOIIO] Read image failed (not a FileDevice).";
-            return false;
+            return std::unique_ptr<oiio::ImageInput>(nullptr);
         }
         std::string path = d->fileName().toStdString();
+        return std::unique_ptr<oiio::ImageInput>(oiio::ImageInput::open(path));
+    };
 
-        std::unique_ptr<oiio::ImageInput> imageInput(oiio::ImageInput::open(path));
+    if (option == Size)
+    {
+        std::unique_ptr<oiio::ImageInput> imageInput = getImageInput(device());
         if(imageInput.get() == nullptr)
             return QVariant();
 
         return QSize(imageInput->spec().width, imageInput->spec().height);
+    }
+    else if(option == ImageTransformation)
+    {
+        std::unique_ptr<oiio::ImageInput> imageInput = getImageInput(device());
+        if(imageInput.get() == nullptr)
+        {
+            return QImageIOHandler::TransformationNone;
+        }
+        // Translate OIIO transformations to QImageIOHandler::ImageTransformation
+        switch(oiio::ImageBuf(imageInput->spec()).orientation())
+        {
+        case 1: return QImageIOHandler::TransformationNone; break;
+        case 2: return QImageIOHandler::TransformationMirror; break;
+        case 3: return QImageIOHandler::TransformationRotate180; break;
+        case 4: return QImageIOHandler::TransformationFlip; break;
+        case 5: return QImageIOHandler::TransformationMirrorAndRotate90; break;
+        case 6: return QImageIOHandler::TransformationRotate90; break;
+        case 7: return QImageIOHandler::TransformationFlipAndRotate90; break;
+        case 8: return QImageIOHandler::TransformationRotate270; break;
+        }
     }
     return QImageIOHandler::option(option);
 }

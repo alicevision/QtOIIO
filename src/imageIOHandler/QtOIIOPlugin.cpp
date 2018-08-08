@@ -13,30 +13,29 @@ namespace oiio = OIIO;
 
 QtOIIOPlugin::QtOIIOPlugin()
 {
-    qInfo() << "[QtOIIO] init supported extensions.";
+    qDebug() << "[QtOIIO] init supported extensions.";
 
     std::string extensionsListStr;
     oiio::getattribute("extension_list", extensionsListStr);
 
     QString extensionsListQStr(QString::fromStdString(extensionsListStr));
-    // qInfo() << "[QtOIIO] extensionsListStr: " << extensionsListQStr << ".";
 
     QStringList formats = extensionsListQStr.split(';');
     for(auto& format: formats)
     {
-        qInfo() << "[QtOIIO] format: " << format << ".";
+        qDebug() << "[QtOIIO] format: " << format << ".";
         QStringList keyValues = format.split(":");
         if(keyValues.size() != 2)
         {
-            qInfo() << "[QtOIIO] warning: split OIIO keys: " << keyValues.size() << " for " << format << ".";
+            qDebug() << "[QtOIIO] warning: split OIIO keys: " << keyValues.size() << " for " << format << ".";
         }
         else
         {
             _supportedExtensions += keyValues[1].split(",");
         }
     }
-    qInfo() << "[QtOIIO] supported extensions: " << _supportedExtensions.join(", ");
-    std::cout << "[QtOIIO] supported extensions: " << _supportedExtensions.join(", ").toStdString() << std::endl;
+    qDebug() << "[QtOIIO] supported extensions: " << _supportedExtensions.join(", ");
+    qInfo() << "[QtOIIO] Plugin Initialized";
 }
 
 QtOIIOPlugin::~QtOIIOPlugin()
@@ -53,9 +52,17 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
     if(path.empty() || path[0] == ':')
         return 0;
 
+#ifdef QTOIIO_USE_FORMATS_BLACKLIST
+    // For performance sake, let Qt handle natively some formats.
+    static const QStringList blacklist{"jpeg", "jpg", "png", "ico"};
+    if(blacklist.contains(format, Qt::CaseSensitivity::CaseInsensitive))
+    {
+        return 0;
+    }
+#endif
     if (_supportedExtensions.contains(format, Qt::CaseSensitivity::CaseInsensitive))
     {
-        qInfo() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" supported.";
+        qDebug() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" supported.";
 //        oiio::ImageOutput *out = oiio::ImageOutput::create(path); // TODO: when writting will be implemented
         Capabilities capabilities(CanRead);
 //        if(out)
@@ -63,7 +70,7 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
 //        oiio::ImageOutput::destroy(out);
         return capabilities;
     }
-    qInfo() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" not supported";
+    qDebug() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" not supported";
     return 0;
 }
 
