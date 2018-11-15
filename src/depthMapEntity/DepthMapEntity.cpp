@@ -528,7 +528,7 @@ void DepthMapEntity::loadDepthMap()
     if(!_source.isValid())
         return;
 
-    qDebug() << "[DepthMapEntity] Load Depth Map: " << _source.path();
+    qDebug() << "[DepthMapEntity] Load Depth Map: " << _source.toLocalFile();
 
     using namespace Qt3DRender;
 
@@ -539,7 +539,7 @@ void DepthMapEntity::loadDepthMap()
     configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
     configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
 
-    oiio::ImageBuf inBuf(_source.path().toStdString(), 0, 0, NULL, &configSpec);
+    oiio::ImageBuf inBuf(_source.toLocalFile().toStdString(), 0, 0, NULL, &configSpec);
     const oiio::ImageSpec& inSpec = inBuf.spec();
 
     qDebug() << "[DepthMapEntity] Image Size: " << inSpec.width << "x" << inSpec.height;
