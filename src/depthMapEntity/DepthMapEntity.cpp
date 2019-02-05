@@ -175,9 +175,9 @@ void DepthMapEntity::createMaterials()
             out vec3 color;
             void main(void)
             {
-                float pixelSize = pixelSizes[0];
-                vec4 right = vec4(0, 0.5*pixelSize, 0, 0);
-                vec4 up = vec4(0.5*pixelSize, 0, 0, 0);
+                float pixelSize = 0.4 * pixelSizes[0];
+                vec4 right = vec4(0, pixelSize, 0, 0);
+                vec4 up = vec4(pixelSize, 0, 0, 0);
                 color = colors[0];
                 gl_Position = gl_in[0].gl_Position - projectionMatrix*(right + up);
                 EmitVertex();
