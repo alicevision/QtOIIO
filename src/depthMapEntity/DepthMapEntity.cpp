@@ -13,6 +13,7 @@
 // #include <Qt3DRender/QPickEvent>
 #include <Qt3DExtras/QPerVertexColorMaterial>
 #include <Qt3DExtras/QPhongMaterial>
+#include <Qt3DExtras/QDiffuseSpecularMaterial>
 
 #include <Qt3DRender/QGeometryRenderer>
 #include <Qt3DRender/QAttribute>
@@ -67,6 +68,15 @@ struct Vec3f
     }
 };
 
+inline Vec3f cross(const Vec3f& a, const Vec3f& b)
+{
+    Vec3f vc;
+    vc.x = a.y * b.z - a.z * b.y;
+    vc.y = a.z * b.x - a.x * b.z;
+    vc.z = a.x * b.y - a.y * b.x;
+
+    return vc;
+}
 
 DepthMapEntity::DepthMapEntity(Qt3DCore::QNode* parent)
     : Qt3DCore::QEntity(parent)
@@ -96,6 +106,18 @@ void DepthMapEntity::setDisplayMode(const DepthMapEntity::DisplayMode& value)
     loadDepthMap();
 
     Q_EMIT displayModeChanged();
+}
+
+void DepthMapEntity::setDisplayColor(bool value)
+{
+    if(_displayColor == value)
+        return;
+    _displayColor = value;
+
+    createMaterials();
+    loadDepthMap();
+
+    Q_EMIT displayColorChanged();
 }
 
 // private
@@ -178,9 +200,22 @@ void DepthMapEntity::createMaterials()
     }
     case DisplayMode::Triangles:
     {
-        // _cloudMaterial = new QMaterial(this);
-        _cloudMaterial = new QPerVertexColorMaterial(this);
-        // _cloudMaterial = new QPhongMaterial(this);
+        std::cout << "[DepthMapEntity] DisplayMode::Triangles:" << std::endl;
+        if(_displayColor)
+        {
+          std::cout << "[DepthMapEntity] QPerVertexColorMaterial" << std::endl;
+          _cloudMaterial = new QPerVertexColorMaterial(this);
+        }
+        else
+        {
+          std::cout << "[DepthMapEntity] QDiffuseSpecularMaterial" << std::endl;
+          QDiffuseSpecularMaterial* cloudMaterial = new QDiffuseSpecularMaterial(this);
+          cloudMaterial->setAmbient(QColor(0, 0, 0));
+          cloudMaterial->setDiffuse(QColor(255, 255, 255));
+          cloudMaterial->setSpecular(QColor(0, 0, 0));
+          cloudMaterial->setShininess(0.0);
+          _cloudMaterial = cloudMaterial;
+        }
         /*
         // configure cloud material
         QEffect* effect = new QEffect;
@@ -572,7 +607,7 @@ void DepthMapEntity::loadDepthMap()
 
     QString simPath = _source.path().replace("depthMap", "simMap");
     oiio::ImageBuf simBuf;
-    if(QUrl(simPath).isValid())
+    if(_displayColor && QUrl(simPath).isValid())
     {
         qDebug() << "[DepthMapEntity] Load Sim Map: " << simPath;
         simBuf.reset(simPath.toStdString(), 0, 0, NULL, &configSpec);
@@ -673,22 +708,45 @@ void DepthMapEntity::loadDepthMap()
         {
             triangles[i] = positions[trianglesIndexes[i]];
         }
+        std::vector<Vec3f> normals;
+        normals.resize(triangles.size());
+        for(int i = 0; i < trianglesIndexes.size(); i+=3)
+        {
+            Vec3f normal = cross(triangles[i+1]-triangles[i], triangles[i+2]-triangles[i]);
+            for(int t = 0; t < 3; ++t)
+                normals[i+t] = normal;
+        }
 
-        QBuffer* trianglesBuffer = new QBuffer(QBuffer::VertexBuffer);
+        QBuffer* vertexBuffer = new QBuffer(QBuffer::VertexBuffer);
         QByteArray trianglesData((const char*)&triangles[0], triangles.size() * sizeof(Vec3f));
-        trianglesBuffer->setData(trianglesData);
+        vertexBuffer->setData(trianglesData);
 
-        QAttribute* positionAttribute = new QAttribute;
-        positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+        QBuffer* normalBuffer = new QBuffer(QBuffer::VertexBuffer);
+        QByteArray normalsData((const char*)&normals[0], normals.size() * sizeof(Vec3f));
+        normalBuffer->setData(normalsData);
+
+        QAttribute* positionAttribute = new QAttribute(this);
+        positionAttribute->setName(QAttribute::defaultPositionAttributeName());
         positionAttribute->setAttributeType(QAttribute::VertexAttribute);
-        positionAttribute->setBuffer(trianglesBuffer);
+        positionAttribute->setBuffer(vertexBuffer);
         positionAttribute->setDataType(QAttribute::Float);
         positionAttribute->setDataSize(3);
         positionAttribute->setByteOffset(0);
         positionAttribute->setByteStride(sizeof(Vec3f));
         positionAttribute->setCount(triangles.size());
 
+        QAttribute* normalAttribute = new QAttribute(this);
+        normalAttribute->setName(QAttribute::defaultNormalAttributeName());
+        normalAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+        normalAttribute->setBuffer(normalBuffer);
+        normalAttribute->setDataType(QAttribute::Float);
+        normalAttribute->setDataSize(3);
+        normalAttribute->setByteOffset(0);
+        normalAttribute->setByteStride(sizeof(Vec3f));
+        normalAttribute->setCount(normals.size());
+
         customGeometry->addAttribute(positionAttribute);
+        customGeometry->addAttribute(normalAttribute);
         // customGeometry->setBoundingVolumePositionAttribute(positionAttribute);
     }
     else
@@ -712,8 +770,9 @@ void DepthMapEntity::loadDepthMap()
     }
 
     // colors buffer
-#ifdef QTOIIO_DEPTHMAP_USE_INDEXES
+    if(_displayColor)
     {
+#ifdef QTOIIO_DEPTHMAP_USE_INDEXES
         // read color data
         QBuffer* colorDataBuffer = new QBuffer(QBuffer::VertexBuffer);
         QByteArray colorData((const char*)colors[0].m, colors.size() * 3 * sizeof(float));
@@ -730,9 +789,7 @@ void DepthMapEntity::loadDepthMap()
         colorAttribute->setByteStride(3 * sizeof(float));
         colorAttribute->setCount(positions.size());
         customGeometry->addAttribute(colorAttribute);
-    }
 #else
-    {
         // Duplicate colors as we cannot use indexes!
         std::vector<Color32f> colorsFlat;
         colorsFlat.reserve(trianglesIndexes.size());
@@ -757,8 +814,8 @@ void DepthMapEntity::loadDepthMap()
         colorAttribute->setByteStride(3 * sizeof(float));
         colorAttribute->setCount(colorsFlat.size());
         customGeometry->addAttribute(colorAttribute);
-    }
 #endif
+    }
 
     // Pixel Sizes buffer
 #ifdef QTOIIO_DEPTHMAP_USE_INDEXES

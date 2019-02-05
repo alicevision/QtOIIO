@@ -17,6 +17,7 @@ class DepthMapEntity : public Qt3DCore::QEntity
 
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged);
     Q_PROPERTY(DisplayMode displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged);
+    Q_PROPERTY(bool displayColor READ displayColor WRITE setDisplayColor NOTIFY displayColorChanged);
 
 public:
     DepthMapEntity(Qt3DCore::QNode* = nullptr);
@@ -35,6 +36,9 @@ public:
     Q_SLOT DisplayMode displayMode() const { return _displayMode; }
     Q_SLOT void setDisplayMode(const DisplayMode&);
 
+    Q_SLOT bool displayColor() const { return _displayColor; }
+    Q_SLOT void setDisplayColor(bool);
+
 private:
     void loadDepthMap();
     void createMaterials();
@@ -42,10 +46,12 @@ private:
 public:
     Q_SIGNAL void sourceChanged();
     Q_SIGNAL void displayModeChanged();
+    Q_SIGNAL void displayColorChanged();
 
 private:
     QUrl _source;
-    DisplayMode _displayMode;
+    DisplayMode _displayMode = DisplayMode::Triangles;
+    bool _displayColor = true;
 
     Qt3DRender::QMaterial* _cloudMaterial;
 };
