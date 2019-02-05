@@ -82,6 +82,14 @@ bool QtOIIOHandler::read(QImage *image)
 
     qDebug() << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels;
 
+    if(inSpec.nchannels >= 3)
+    {
+        // Color conversion to sRGB
+        const std::string& colorSpace = inSpec.get_string_attribute("oiio:Colorspace", "sRGB");
+        if(colorSpace != "sRGB")
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+    }
+
     int nchannels = 0;
     QImage::Format format = QImage::NImageFormats;
     if(inSpec.nchannels == 4)
