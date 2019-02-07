@@ -605,12 +605,12 @@ void DepthMapEntity::loadDepthMap()
         qDebug() << "[DepthMapEntity] missing metadata iCamArr.";
     }
 
-    QString simPath = _source.path().replace("depthMap", "simMap");
+    const QUrl simPath = QUrl::fromLocalFile(_source.path().replace("depthMap", "simMap"));
     oiio::ImageBuf simBuf;
-    if(_displayColor && QUrl(simPath).isValid())
+    if(_displayColor && simPath.isValid())
     {
         qDebug() << "[DepthMapEntity] Load Sim Map: " << simPath;
-        simBuf.reset(simPath.toStdString(), 0, 0, NULL, &configSpec);
+        simBuf.reset(simPath.toLocalFile().toStdString(), 0, 0, NULL, &configSpec);
     }
     const oiio::ImageSpec& simSpec = simBuf.spec();
     const bool validSimMap = (simSpec.width == inSpec.width) && (simSpec.height == inSpec.height);
