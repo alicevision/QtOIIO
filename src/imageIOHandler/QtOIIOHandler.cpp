@@ -194,12 +194,17 @@ bool QtOIIOHandler::read(QImage *image)
         // perceptually uniform: "inferno", "viridis", "magma", "plasma" -- others: "blue-red", "spectrum", "heat"
         const char* colorMapEnv = std::getenv("QTOIIO_COLORMAP");
         const std::string colorMapType = colorMapEnv ? colorMapEnv : "plasma";
+
+        // detect AliceVision special files that require a jetColorMap based conversion
+        const bool isDepthMap = d->fileName().contains("depthMap");
+        const bool isNmodMap = d->fileName().contains("nmodMap");
+
         if(colorMapEnv)
         {
             qDebug() << "[QtOIIO] compute colormap \"" << colorMapType.c_str() << "\"";
             oiio::ImageBufAlgo::color_map(tmpBuf, inBuf, 0, colorMapType);
         }
-        else if(d->fileName().contains("depthMap"))
+        else if(isDepthMap || isNmodMap)
         {
             oiio::ImageBufAlgo::PixelStats stats;
             oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
@@ -212,26 +217,11 @@ bool QtOIIOHandler::read(QImage *image)
                     float depthValue = 0.0f;
                     inBuf.getpixel(x, y, &depthValue, 1);
                     float normalizedDepthValue = (depthValue - stats.min[0]) / (stats.max[0] - stats.min[0]);
-                    Color32f color = getColor32fFromJetColorMap(normalizedDepthValue);
-                    tmpBuf.setpixel(x, y, color.m, 3); // set only 3 channels (RGB)
-                }
-            }
-        }
-        else if(d->fileName().contains("nmodMap"))
-        {
-            oiio::ImageBufAlgo::PixelStats stats;
-            oiio::ImageBufAlgo::computePixelStats(stats, inBuf);
-            // oiio::ImageBufAlgo::color_map(dst, src, srcchannel, int(knots.size()/3), 3, knots);
-
-#pragma omp parallel for
-            for(int y = 0; y < inSpec.height; ++y)
-            {
-                for(int x = 0; x < inSpec.width; ++x)
-                {
-                    float depthValue = 0.0f;
-                    inBuf.getpixel(x, y, &depthValue, 1);
-                    float normalizedDepthValue = (depthValue - stats.min[0]) / (stats.max[0] - stats.min[0]);
-                    Color32f color = getColor32fFromJetColorMapClamp(normalizedDepthValue);
+                    Color32f color;
+                    if(isDepthMap)
+                        color = getColor32fFromJetColorMap(normalizedDepthValue);
+                    else if(isNmodMap)
+                        color = getColor32fFromJetColorMapClamp(normalizedDepthValue);
                     tmpBuf.setpixel(x, y, color.m, 3); // set only 3 channels (RGB)
                 }
             }
