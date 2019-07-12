@@ -41,6 +41,8 @@ struct Color32f
 
 inline Color32f getColor32fFromJetColorMap(float value)
 {
+    if(std::isnan(value))
+        return Color32f(1.0f, 0.0f, 1.0f);
     if(value <= 0.0f)
         return Color32f(0, 0, 0);
     if(value >= 1.0f)
@@ -59,6 +61,8 @@ inline Color32f getColor32fFromJetColorMap(float value)
 
 inline Color32f getColor32fFromJetColorMapClamp(float value)
 {
+    if(std::isnan(value))
+        return Color32f(1.0f, 0.0f, 1.0f);
     if(value < 0.0f)
         value = 0.0f;
     if(value > 1.0f)

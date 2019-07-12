@@ -328,7 +328,8 @@ void DepthMapEntity::loadDepthMap()
             }
             else
             {
-                float normalizedDepthValue = (depthValue - stats.min[0]) / (stats.max[0] - stats.min[0]);
+                const float range = stats.max[0] - stats.min[0];
+                float normalizedDepthValue = range != 0.0f ? (depthValue - stats.min[0]) / range : 1.0f;
                 Color32f color = getColor32fFromJetColorMapClamp(normalizedDepthValue);
                 colors.push_back(color);
             }
