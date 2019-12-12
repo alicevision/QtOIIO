@@ -111,6 +111,9 @@ void DepthMapEntity::setDisplayColor(bool value)
 
 void DepthMapEntity::updateMaterial()
 {
+    if(_status != DepthMapEntity::Ready)
+      return;
+
     Qt3DRender::QMaterial* newMaterial = nullptr;
 
     switch(_displayMode)
@@ -233,6 +236,7 @@ bool validTriangleRatio(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 // private
 void DepthMapEntity::loadDepthMap()
 {
+    _status = DepthMapEntity::Loading;
 
     if(_meshRenderer)
     {
@@ -243,9 +247,26 @@ void DepthMapEntity::loadDepthMap()
 
     qDebug() << "[DepthMapEntity] loadDepthMap";
     if(!_source.isValid())
+    {
+        _status = DepthMapEntity::Error;
         return;
+    }
 
     qDebug() << "[DepthMapEntity] Load Depth Map: " << _source.toLocalFile();
+
+    // verify that the file is a valid depthMap based on its metadata
+    {
+        const std::string imagePath = _source.toLocalFile().toStdString();
+        std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(imagePath));
+        const oiio::ImageSpec& inSpec = in->spec();
+        // check for a specific metadata entry
+        const oiio::ParamValue* param = inSpec.find_attribute("AliceVision:CArr");
+        if(!param)
+        {
+            _status = DepthMapEntity::Error;
+            return;
+        }
+    }
 
     using namespace Qt3DRender;
 
@@ -449,7 +470,9 @@ void DepthMapEntity::loadDepthMap()
     // create the geometry renderer
     _meshRenderer = new QGeometryRenderer;
     _meshRenderer->setGeometry(customGeometry);
-
+    
+    _status = DepthMapEntity::Ready;
+    
     // add components
     addComponent(_meshRenderer);
     updateMaterial();
