@@ -129,7 +129,7 @@ bool QtOIIOHandler::read(QImage *image)
     }
 
     int nchannels = 0;
-    bool moreThan8Bits = inSpec.format != oiio::TypeDesc::UINT8 && inSpec.format != oiio::TypeDesc::INT8;
+    const bool moreThan8Bits = inSpec.format != oiio::TypeDesc::UINT8 && inSpec.format != oiio::TypeDesc::INT8;
     QImage::Format format = QImage::NImageFormats;
     if(inSpec.nchannels == 4)
     {
@@ -190,7 +190,7 @@ bool QtOIIOHandler::read(QImage *image)
     // check picture channels number
     if(inSpec.nchannels < 3 && inSpec.nchannels != 1)
     {
-        qWarning() << "[QtOIIO] Can't load channels of image file '" << path.c_str() << "' (nchannels=" << inSpec.nchannels << ").";
+        qWarning() << "[QtOIIO] Cannot load channels of image file '" << path.c_str() << "' (nchannels=" << inSpec.nchannels << ").";
         return false;
     }
 
@@ -232,7 +232,7 @@ bool QtOIIOHandler::read(QImage *image)
     // if the input is grayscale, we have the option to convert it with a color map
     if(convertGrayscaleToJetColorMap && inSpec.nchannels == 1)
     {
-        oiio::TypeDesc typeDesc = oiio::TypeDesc::UINT8;
+        const oiio::TypeDesc typeDesc = oiio::TypeDesc::UINT8;
         oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
         oiio::ImageBuf tmpBuf(requestedSpec);
         // perceptually uniform: "inferno", "viridis", "magma", "plasma" -- others: "blue-red", "spectrum", "heat"
@@ -301,7 +301,7 @@ bool QtOIIOHandler::read(QImage *image)
     // Shuffle channels to convert from OIIO to Qt
     else if(nchannels == 4)
     {
-        oiio::TypeDesc typeDesc = moreThan8Bits ? oiio::TypeDesc::UINT16 : oiio::TypeDesc::UINT8;
+        const oiio::TypeDesc typeDesc = moreThan8Bits ? oiio::TypeDesc::UINT16 : oiio::TypeDesc::UINT8;
 
         if(moreThan8Bits) // same than: format == QImage::Format_RGBA64 || format == QImage::Format_RGBX64
         {
