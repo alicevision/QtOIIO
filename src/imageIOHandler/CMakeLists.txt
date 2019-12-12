@@ -14,6 +14,8 @@ add_library(QtOIIOPlugin
 target_include_directories(QtOIIOPlugin
     PUBLIC
     ${OPENIMAGEIO_INCLUDE_DIRS}
+    ${OPENEXR_INCLUDE_DIR}
+    ${ILMBASE_INCLUDE_DIR}
     )
 target_link_libraries(QtOIIOPlugin
     PUBLIC

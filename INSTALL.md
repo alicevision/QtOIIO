@@ -3,7 +3,7 @@ This guide will help you build and install QtOIIO plugin.
 
 ## Requirements
 QtOIIO requires:
-* [Qt5](https://www.qt.io/) (>= 5.10, make sure to use the **same version** as the target application)
+* [Qt5](https://www.qt.io/) (>= 5.13, make sure to use the **same version** as the target application)
 * [OpenImageIO](https://github.com/https://github.com/OpenImageIO/oiio) (>= 1.8.7) - with OpenEXR support for depthmaps visualization 
 * [CMake](https://cmake.org/) (>= 3.4)
 * On Windows platform: Microsoft Visual Studio (>= 2015.3)
@@ -20,9 +20,9 @@ In the following steps, replace <INSTALL_PATH> with the installation path of you
 > We will use "NMake Makefiles" generators here to have one-line build/installation,
 but Visual Studio solutions can be generated if need be.
 
-From a developer command-line, using Qt 5.11 (built with VS2015) and VCPKG for OIIO:
+From a developer command-line, using Qt 5.13 (built with VS2015) and VCPKG for OIIO:
 ```
-set QT_DIR=/path/to/qt/5.11.0/msvc2017_64
+set QT_DIR=/path/to/qt/5.13.0/msvc2017_64
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DCMAKE_PREFIX_PATH=%QT_DIR% -DVCPKG_TARGET_TRIPLET=x64-windows -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=<INSTALL_PATH> -DCMAKE_BUILD_TYPE=Release
 nmake install
 ```
@@ -30,7 +30,7 @@ nmake install
 #### Linux
 
 ```bash
-export QT_DIR=/path/to/qt/5.11.0/gcc_64
+export QT_DIR=/path/to/qt/5.13.0/gcc_64
 export OPENIMAGEIO_DIR=/path/to/oiio/install
 export 
 cmake .. -DCMAKE_PREFIX_PATH=$QT_DIR

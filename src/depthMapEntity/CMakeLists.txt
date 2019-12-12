@@ -15,6 +15,8 @@ add_library(depthMapEntityQmlPlugin SHARED ${TARGET_SRCS})
 target_include_directories(depthMapEntityQmlPlugin
     PUBLIC
     ${OPENIMAGEIO_INCLUDE_DIRS}
+    ${OPENEXR_INCLUDE_DIR}
+    ${ILMBASE_INCLUDE_DIR}
     )
 target_link_libraries(depthMapEntityQmlPlugin
     PUBLIC

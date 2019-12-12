@@ -18,6 +18,17 @@
 
 namespace oiio = OIIO;
 
+inline const float& clamp( const float& v, const float& lo, const float& hi )
+{
+    assert( !(hi < lo) );
+    return (v < lo) ? lo : (hi < v) ? hi : v;
+}
+
+inline unsigned short floatToUShort(float v)
+{
+    return clamp(v, 0.0f, 1.0f) * 65535;
+}
+
 QtOIIOHandler::QtOIIOHandler()
 {
     qDebug() << "[QtOIIO] QtOIIOHandler";
@@ -103,7 +114,7 @@ bool QtOIIOHandler::read(QImage *image)
     const oiio::ImageSpec& inSpec = inBuf.spec();
 #endif
 
-    qDebug() << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels;
+    qInfo() << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels << ", format:" << inSpec.format.c_str();
 
     if(inSpec.nchannels >= 3)
     {
@@ -118,15 +129,22 @@ bool QtOIIOHandler::read(QImage *image)
     }
 
     int nchannels = 0;
+    const bool moreThan8Bits = inSpec.format != oiio::TypeDesc::UINT8 && inSpec.format != oiio::TypeDesc::INT8;
     QImage::Format format = QImage::NImageFormats;
     if(inSpec.nchannels == 4)
     {
-        format = QImage::Format_ARGB32; // Qt documentation: The image is stored using a 32-bit ARGB format (0xAARRGGBB).
+        if(moreThan8Bits)
+            format = QImage::Format_RGBA64; // Qt documentation: The image is stored using a 64-bit halfword-ordered RGBA format (16-16-16-16). (added in Qt 5.12)
+        else
+            format = QImage::Format_ARGB32; // Qt documentation: The image is stored using a 32-bit ARGB format (0xAARRGGBB).
         nchannels = 4;
     }
     else if(inSpec.nchannels == 3)
     {
-        format = QImage::Format_RGB32; // Qt documentation: The image is stored using a 32-bit RGB format (0xffRRGGBB).
+        if(moreThan8Bits)
+            format = QImage::Format_RGBX64; // Qt documentation: The image is stored using a 64-bit halfword-ordered RGB(x) format (16-16-16-16). This is the same as the Format_RGBA64 except alpha must always be 65535. (added in Qt 5.12)
+        else
+            format = QImage::Format_RGB32; // Qt documentation: The image is stored using a 32-bit RGB format (0xffRRGGBB).
         nchannels = 4;
     }
     else if(inSpec.nchannels == 1)
@@ -138,7 +156,10 @@ bool QtOIIOHandler::read(QImage *image)
         }
         else
         {
-            format = QImage::Format_Grayscale8; // Qt documentation: The image is stored using an 8-bit grayscale format.
+            if(moreThan8Bits)
+                format = QImage::Format_Grayscale16; // Qt documentation: The image is stored using an 16-bit grayscale format. (added in Qt 5.13)
+            else
+                format = QImage::Format_Grayscale8; // Qt documentation: The image is stored using an 8-bit grayscale format.
             nchannels = 1;
         }
     }
@@ -148,11 +169,30 @@ bool QtOIIOHandler::read(QImage *image)
         return false;
     }
 
+    {
+        std::string formatStr;
+        switch(format)
+        {
+            case QImage::Format_RGBA64: formatStr = "Format_RGBA64"; break;
+            case QImage::Format_ARGB32: formatStr = "Format_ARGB32"; break;
+            case QImage::Format_RGBX64: formatStr = "Format_RGBX64"; break;
+            case QImage::Format_RGB32: formatStr = "Format_RGB32"; break;
+            case QImage::Format_Grayscale16: formatStr = "Format_Grayscale16"; break;
+            case QImage::Format_Grayscale8: formatStr = "Format_Grayscale8"; break;
+            default:
+                formatStr = std::string("Unknown QImage Format:") + std::to_string(int(format));
+        }
+        qDebug() << "[QtOIIO] QImage Format: " << formatStr.c_str();
+    }
+
     qDebug() << "[QtOIIO] nchannels:" << nchannels;
 
     // check picture channels number
     if(inSpec.nchannels < 3 && inSpec.nchannels != 1)
-        throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+    {
+        qWarning() << "[QtOIIO] Cannot load channels of image file '" << path.c_str() << "' (nchannels=" << inSpec.nchannels << ").";
+        return false;
+    }
 
 //    // convert to grayscale if needed
 //    if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -170,7 +210,6 @@ bool QtOIIOHandler::read(QImage *image)
 //        inBuf.copy(grayscaleBuf);
 //    }
 
-    oiio::TypeDesc typeDesc = oiio::TypeDesc::UINT8;
 //    // add missing channels
 //    if(inSpec.nchannels < 3 && nchannels > inSpec.nchannels)
 //    {
@@ -186,9 +225,14 @@ bool QtOIIOHandler::read(QImage *image)
 //        }
 //        inBuf.swap(requestedBuf);
 //    }
+
+    // qDebug() << "[QtOIIO] create output QImage";
+    QImage result(inSpec.width, inSpec.height, format);
+
     // if the input is grayscale, we have the option to convert it with a color map
     if(convertGrayscaleToJetColorMap && inSpec.nchannels == 1)
     {
+        const oiio::TypeDesc typeDesc = oiio::TypeDesc::UINT8;
         oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
         oiio::ImageBuf tmpBuf(requestedSpec);
         // perceptually uniform: "inferno", "viridis", "magma", "plasma" -- others: "blue-red", "spectrum", "heat"
@@ -243,31 +287,74 @@ bool QtOIIOHandler::read(QImage *image)
         }
         // qDebug() << "[QtOIIO] compute colormap done";
         inBuf.swap(tmpBuf);
+
+        {
+            oiio::ROI exportROI = inBuf.roi();
+            exportROI.chbegin = 0;
+            exportROI.chend = nchannels;
+
+            // qDebug() << "[QtOIIO] fill output QImage";
+            inBuf.get_pixels(exportROI, typeDesc, result.bits());
+        }
     }
 
     // Shuffle channels to convert from OIIO to Qt
     else if(nchannels == 4)
     {
-        // qDebug() << "[QtOIIO] shuffle channels";
-        oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
-        oiio::ImageBuf tmpBuf(requestedSpec);
+        const oiio::TypeDesc typeDesc = moreThan8Bits ? oiio::TypeDesc::UINT16 : oiio::TypeDesc::UINT8;
 
-        const std::vector<int> channelOrder = {2, 1, 0, 3}; // This one works, not sure why...
-        oiio::ImageBufAlgo::channels(tmpBuf, inBuf, 4, &channelOrder.front());
-        inBuf.swap(tmpBuf);
-        // qDebug() << "[QtOIIO] shuffle channels done";
-    }
+        if(moreThan8Bits) // same than: format == QImage::Format_RGBA64 || format == QImage::Format_RGBX64
+        {
+            qDebug() << "[QtOIIO] Convert '" << inSpec.format.c_str() << "'' OIIO image to 'uint16' Qt image.";
+#pragma omp parallel for
+            for(int y = 0; y < inSpec.height; ++y)
+            {
+                for(int x = 0; x < inSpec.width; ++x)
+                {
+                    float rgba[4] = {0.0, 0.0, 0.0, 1.0};
+                    inBuf.getpixel(x, y, rgba, 4);
 
-    // qDebug() << "[QtOIIO] create output QImage";
-    QImage result(inSpec.width, inSpec.height, format);
+                    quint64* p = (quint64*)(result.scanLine(y)) + x;
+                    QRgba64 color = QRgba64::fromRgba64(floatToUShort(rgba[0]), floatToUShort(rgba[1]), floatToUShort(rgba[2]), floatToUShort(rgba[3]));
+                    *p = (quint64)color;
+                }
+            }
+        }
+        else
+        {
+            oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
+            oiio::ImageBuf tmpBuf(requestedSpec);
+            // qDebug() << "[QtOIIO] shuffle channels";
 
-    {
-        oiio::ROI exportROI = inBuf.roi();
-        exportROI.chbegin = 0;
-        exportROI.chend = nchannels;
+            std::vector<int> channelOrder = {0, 1, 2, 3};
+            float channelValues[] = {1.f, 1.f, 1.f, 1.f};
+            if(format == QImage::Format_ARGB32)
+            {
+                // (0xAARRGGBB) => 3, 0, 1, 2 in reverse order
+                channelOrder = {2, 1, 0, 3};
+            }
+            else if(format == QImage::Format_RGB32)
+            {
+                channelOrder = {2, 1, 0, -1}; // not sure
+            }
+            else
+            {
+                qWarning() << "Unsupported format conversion.";
+            }
+            // qWarning() << "channelOrder: " << channelOrder[0] << ", " << channelOrder[1] << ", " << channelOrder[2] << ", " << channelOrder[3];
+            oiio::ImageBufAlgo::channels(tmpBuf, inBuf, 4, &channelOrder.front(), channelValues, {}, false);
+            inBuf.swap(tmpBuf);
+            // qDebug() << "[QtOIIO] shuffle channels done";
 
-        // qDebug() << "[QtOIIO] fill output QImage";
-        inBuf.get_pixels(exportROI, typeDesc, result.bits());
+            {
+                oiio::ROI exportROI = inBuf.roi();
+                exportROI.chbegin = 0;
+                exportROI.chend = nchannels;
+
+                // qDebug() << "[QtOIIO] fill output QImage";
+                inBuf.get_pixels(exportROI, typeDesc, result.bits());
+            }
+        }
     }
 
     // qDebug() << "[QtOIIO] Image loaded: \"" << path << "\"";
