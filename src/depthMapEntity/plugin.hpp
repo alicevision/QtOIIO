@@ -17,7 +17,7 @@ public:
     void registerTypes(const char* uri) override
     {
         Q_ASSERT(uri == QLatin1String("DepthMapEntity"));
-        qmlRegisterType<DepthMapEntity>(uri, 2, 0, "DepthMapEntity");
+        qmlRegisterType<DepthMapEntity>(uri, 2, 1, "DepthMapEntity");
     }
 };
 
