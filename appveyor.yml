@@ -1,12 +1,5 @@
-version: '1.0.{build}'
-
-image: Visual Studio 2017
-
-configuration:
-  - Release
-
-platform:
-  - x64
+image: Visual Studio 2019
+configuration: Release
 
 environment:
   QT5: C:\Qt\5.13\msvc2017_64
@@ -16,13 +9,13 @@ install:
   - vcpkg list
   - vcpkg install
         openimageio
-        --triplet %PLATFORM%-windows
+        --triplet x64-windows
   - vcpkg list
  
 before_build:
     - md build
     - cd build
-    - cmake .. -G "Visual Studio 14 2015 Win64"
+    - cmake .. -A x64
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DCMAKE_PREFIX_PATH=%QT5% 
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake 
