@@ -2,7 +2,7 @@ image: Visual Studio 2019
 configuration: Release
 
 environment:
-  QT5: C:\Qt\5.13\msvc2017_64
+  QT5: C:\Qt\5.14\msvc2017_64   # Is still available on the VS 2019 image
   # APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 install:
