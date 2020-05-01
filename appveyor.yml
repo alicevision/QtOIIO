@@ -38,3 +38,5 @@ build:
 cache:
   c:\tools\vcpkg\installed\
  
+artifacts:
+ - path: build
