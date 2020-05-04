@@ -35,3 +35,6 @@ artifacts:
  - path: build
  - path: build\src\imageIOHandler\Release\QtOIIOPlugin.dll
  - path: build\src\imageIOHandler\Release\QtOIIOPlugin.lib
+ - path: build\src\depthMapEntity\Release\depthMapEntityQmlPlugin.dll
+ - path: build\src\depthMapEntity\Release\depthMapEntityQmlPlugin.lib
+
