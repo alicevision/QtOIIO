@@ -33,3 +33,5 @@ cache:
  
 artifacts:
  - path: build
+ - path: build\src\imageIOHandler\Release\QtOIIOPlugin.dll
+ - path: build\src\imageIOHandler\Release\QtOIIOPlugin.lib
