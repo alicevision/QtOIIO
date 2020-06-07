@@ -331,7 +331,7 @@ void DepthMapEntity::loadDepthMap()
         {
             float depthValue = 0.0f;
             inBuf.getpixel(x, y, &depthValue, 1);
-            if(depthValue == -1.f)
+            if(depthValue <= 0.f)
                 continue;
 
             point3d p = CArr + (iCamArr * point2d((double)x, (double)y)).normalize() * depthValue;
