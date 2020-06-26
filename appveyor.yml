@@ -1,28 +1,21 @@
-version: '1.0.{build}'
-
-image: Visual Studio 2017
-
-configuration:
-  - Release
-
-platform:
-  - x64
+image: Visual Studio 2019
+configuration: Release
 
 environment:
-  QT5: C:\Qt\5.13\msvc2017_64
+  QT5: C:\Qt\5.14\msvc2017_64   # Is still available on the VS 2019 image
   # APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 install:
   - vcpkg list
   - vcpkg install
         openimageio
-        --triplet %PLATFORM%-windows
+        --triplet x64-windows
   - vcpkg list
  
 before_build:
     - md build
     - cd build
-    - cmake .. -G "Visual Studio 14 2015 Win64"
+    - cmake .. -A x64
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DCMAKE_PREFIX_PATH=%QT5% 
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake 
@@ -38,3 +31,10 @@ build:
 cache:
   c:\tools\vcpkg\installed\
  
+artifacts:
+ - path: build
+ - path: build\src\imageIOHandler\Release\QtOIIOPlugin.dll
+ - path: build\src\imageIOHandler\Release\QtOIIOPlugin.lib
+ - path: build\src\depthMapEntity\Release\depthMapEntityQmlPlugin.dll
+ - path: build\src\depthMapEntity\Release\depthMapEntityQmlPlugin.lib
+
