@@ -21,11 +21,10 @@ target_link_libraries(QtOIIOPlugin
     PUBLIC
     ${OPENIMAGEIO_LIBRARIES}
     )
-if(Qt5Core_FOUND)
-  target_link_libraries(QtOIIOPlugin
-      PUBLIC
-      Qt5::Core Qt5::Gui
-      )
-endif()
+
+target_link_libraries(QtOIIOPlugin
+    PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
+    )
 
 install(TARGETS QtOIIOPlugin DESTINATION imageformats)

@@ -1,14 +1,12 @@
 # Target srcs
 file(GLOB_RECURSE TARGET_SRCS *.cpp *.cxx *.cc *.C *.c *.h *.hpp)
 
-
-find_package(Qt5Gui)
-find_package(Qt5Qml)
-find_package(Qt5Quick)
-find_package(Qt53DCore)
-find_package(Qt53DRender)
-find_package(Qt53DExtras)
-
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Gui REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Qml REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Quick REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS 3DCore REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS 3DRender REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS 3DExtras REQUIRED)
 
 # Target properties
 add_library(depthMapEntityQmlPlugin SHARED ${TARGET_SRCS})
@@ -22,12 +20,17 @@ target_link_libraries(depthMapEntityQmlPlugin
     PUBLIC
     ${OPENIMAGEIO_LIBRARIES}
     )
-if(Qt5Core_FOUND)
-  target_link_libraries(depthMapEntityQmlPlugin
+
+target_link_libraries(depthMapEntityQmlPlugin
       PUBLIC
-      Qt5::Core Qt5::Gui Qt5::Qml Qt5::Quick Qt5::3DCore Qt5::3DRender Qt5::3DExtras
+      Qt${QT_VERSION_MAJOR}::Core
+      Qt${QT_VERSION_MAJOR}::Gui
+      Qt${QT_VERSION_MAJOR}::Qml
+      Qt${QT_VERSION_MAJOR}::Quick
+      Qt${QT_VERSION_MAJOR}::3DCore
+      Qt${QT_VERSION_MAJOR}::3DRender
+      Qt${QT_VERSION_MAJOR}::3DExtras
       )
-endif()
 
 # QT5_USE_MODULES(depthMapEntityQmlPlugin Core Qml Quick 3DCore 3DRender 3DExtras ${OPENIMAGEIO_LIBRARIES})
 
