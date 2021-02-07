@@ -1,7 +1,7 @@
 #include "QtOIIOPlugin.hpp"
 #include "QtOIIOHandler.hpp"
 
-#include <qimageiohandler.h>
+#include <QImageIOHandler>
 #include <QFileDevice>
 #include <QDebug>
 
@@ -46,18 +46,18 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
 {
     QFileDevice* d = dynamic_cast<QFileDevice*>(device);
     if(!d)
-        return 0;
+        return QImageIOPlugin::Capabilities();
 
     const std::string path = d->fileName().toStdString();
     if(path.empty() || path[0] == ':')
-        return 0;
+        return QImageIOPlugin::Capabilities();
 
 #ifdef QTOIIO_USE_FORMATS_BLACKLIST
     // For performance sake, let Qt handle natively some formats.
     static const QStringList blacklist{"jpeg", "jpg", "png", "ico"};
     if(blacklist.contains(format, Qt::CaseSensitivity::CaseInsensitive))
     {
-        return 0;
+        return QImageIOPlugin::Capabilities();
     }
 #endif
     if (_supportedExtensions.contains(format, Qt::CaseSensitivity::CaseInsensitive))
@@ -71,7 +71,7 @@ QImageIOPlugin::Capabilities QtOIIOPlugin::capabilities(QIODevice *device, const
         return capabilities;
     }
     qDebug() << "[QtOIIO] Capabilities: extension \"" << QString(format) << "\" not supported";
-    return 0;
+    return QImageIOPlugin::Capabilities();
 }
 
 QImageIOHandler *QtOIIOPlugin::create(QIODevice *device, const QByteArray &format) const
