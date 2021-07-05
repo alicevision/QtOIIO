@@ -79,6 +79,7 @@ bool QtOIIOHandler::read(QImage *image)
 
     oiio::ImageSpec configSpec;
     // libRAW configuration
+    //configSpec.attribute("raw:user_flip", 0);
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
 #if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
@@ -113,6 +114,7 @@ bool QtOIIOHandler::read(QImage *image)
 #else
     const oiio::ImageSpec& inSpec = inBuf.spec();
 #endif
+    float pixelAspectRatio = inSpec.get_float_attribute("PixelAspectRatio", 1.0f);
 
     qInfo() << "[QtOIIO] width:" << inSpec.width << ", height:" << inSpec.height << ", nchannels:" << inSpec.nchannels << ", format:" << inSpec.format.c_str();
 
@@ -355,6 +357,13 @@ bool QtOIIOHandler::read(QImage *image)
                 inBuf.get_pixels(exportROI, typeDesc, result.bits());
             }
         }
+    }
+
+
+    if (pixelAspectRatio != 1.0f)
+    {
+        QSize newSize(inSpec.width * pixelAspectRatio, inSpec.height);
+        result = result.scaled(newSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     }
 
     // qDebug() << "[QtOIIO] Image loaded: \"" << path << "\"";
