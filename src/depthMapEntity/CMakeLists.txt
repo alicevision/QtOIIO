@@ -10,19 +10,9 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS 3DExtras REQUIRED)
 
 # Target properties
 add_library(depthMapEntityQmlPlugin SHARED ${TARGET_SRCS})
-target_include_directories(depthMapEntityQmlPlugin
-    PUBLIC
-    ${OPENIMAGEIO_INCLUDE_DIRS}
-    ${OPENEXR_INCLUDE_DIR}
-    ${ILMBASE_INCLUDE_DIR}
-    )
-target_link_libraries(depthMapEntityQmlPlugin
-    PUBLIC
-    ${OPENIMAGEIO_LIBRARIES}
-    )
-
 target_link_libraries(depthMapEntityQmlPlugin
       PUBLIC
+      OpenImageIO::OpenImageIO
       Qt${QT_VERSION_MAJOR}::Core
       Qt${QT_VERSION_MAJOR}::Gui
       Qt${QT_VERSION_MAJOR}::Qml
