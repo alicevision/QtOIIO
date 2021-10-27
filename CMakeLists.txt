@@ -20,7 +20,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # OpenImageIO
 find_package(OpenImageIO REQUIRED)
-if(OPENIMAGEIO_FOUND)
+if(TARGET OpenImageIO::OpenImageIO)
     message(STATUS "OpenImageIO found.")
 else()
     message(SEND_ERROR "Failed to find OpenImageIO.")
