@@ -10,9 +10,10 @@
 #include <Qt3DRender/QRenderPass>
 #include <Qt3DRender/QShaderProgram>
 
-#include <Qt3DRender/QAttribute>
-#include <Qt3DRender/QBuffer>
+#include <Qt3DCore/QAttribute>
+#include <Qt3DCore/QBuffer>
 #include <Qt3DCore/QTransform>
+#include <Qt3DCore/QGeometry>
 
 #include <QDebug>
 
@@ -338,7 +339,7 @@ void DepthMapEntity::loadDepthMap()
             point3d p = CArr + (iCamArr * point2d((double)x, (double)y)).normalize() * depthValue;
             Vec3f position(p.x, -p.y, -p.z);
 
-            indexPerPixel[y * inSpec.width + x] = positions.size();
+            indexPerPixel[y * inSpec.width + x] = (int)positions.size();
             positions.push_back(position);
 
             if(validSimMap)
@@ -361,7 +362,7 @@ void DepthMapEntity::loadDepthMap()
     qDebug() << "[DepthMapEntity] Valid Depth Values: " << positions.size();
 
     // create geometry
-    QGeometry* customGeometry = new QGeometry;
+    auto* customGeometry = new Qt3DCore::QGeometry;
 
     // vertices buffer
     std::vector<int> trianglesIndexes;
@@ -411,33 +412,33 @@ void DepthMapEntity::loadDepthMap()
             normals[i+t] = normal;
     }
 
-    QBuffer* vertexBuffer = new QBuffer(QBuffer::VertexBuffer);
+    Qt3DCore::QBuffer* vertexBuffer = new Qt3DCore::QBuffer;
     QByteArray trianglesData((const char*)&triangles[0], triangles.size() * sizeof(Vec3f));
     vertexBuffer->setData(trianglesData);
 
-    QBuffer* normalBuffer = new QBuffer(QBuffer::VertexBuffer);
+    Qt3DCore::QBuffer* normalBuffer = new Qt3DCore::QBuffer;
     QByteArray normalsData((const char*)&normals[0], normals.size() * sizeof(Vec3f));
     normalBuffer->setData(normalsData);
 
-    QAttribute* positionAttribute = new QAttribute(this);
-    positionAttribute->setName(QAttribute::defaultPositionAttributeName());
-    positionAttribute->setAttributeType(QAttribute::VertexAttribute);
+    Qt3DCore::QAttribute* positionAttribute = new Qt3DCore::QAttribute(this);
+    positionAttribute->setName(Qt3DCore::QAttribute::defaultPositionAttributeName());
+    positionAttribute->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
     positionAttribute->setBuffer(vertexBuffer);
-    positionAttribute->setDataType(QAttribute::Float);
-    positionAttribute->setDataSize(3);
+    positionAttribute->setVertexBaseType(Qt3DCore::QAttribute::Float);
+    positionAttribute->setVertexSize(3);
     positionAttribute->setByteOffset(0);
     positionAttribute->setByteStride(sizeof(Vec3f));
-    positionAttribute->setCount(triangles.size());
+    positionAttribute->setCount((uint)triangles.size());
 
-    QAttribute* normalAttribute = new QAttribute(this);
-    normalAttribute->setName(QAttribute::defaultNormalAttributeName());
-    normalAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    Qt3DCore::QAttribute* normalAttribute = new Qt3DCore::QAttribute(this);
+    normalAttribute->setName(Qt3DCore::QAttribute::defaultNormalAttributeName());
+    normalAttribute->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
     normalAttribute->setBuffer(normalBuffer);
-    normalAttribute->setDataType(QAttribute::Float);
-    normalAttribute->setDataSize(3);
+    normalAttribute->setVertexBaseType(Qt3DCore::QAttribute::Float);
+    normalAttribute->setVertexSize(3);
     normalAttribute->setByteOffset(0);
     normalAttribute->setByteStride(sizeof(Vec3f));
-    normalAttribute->setCount(normals.size());
+    normalAttribute->setCount((uint)normals.size());
 
     customGeometry->addAttribute(positionAttribute);
     customGeometry->addAttribute(normalAttribute);
@@ -452,20 +453,20 @@ void DepthMapEntity::loadDepthMap()
     }
 
     // read color data
-    QBuffer* colorDataBuffer = new QBuffer(QBuffer::VertexBuffer);
+    Qt3DCore::QBuffer* colorDataBuffer = new Qt3DCore::QBuffer;
     QByteArray colorData((const char*)colorsFlat[0].m, colorsFlat.size() * 3 * sizeof(float));
     colorDataBuffer->setData(colorData);
 
-    QAttribute* colorAttribute = new QAttribute;
-    qDebug() << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DRender::QAttribute::defaultColorAttributeName();
-    colorAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
-    colorAttribute->setAttributeType(QAttribute::VertexAttribute);
+    Qt3DCore::QAttribute* colorAttribute = new Qt3DCore::QAttribute;
+    qDebug() << "Qt3DRender::QAttribute::defaultColorAttributeName(): " << Qt3DCore::QAttribute::defaultColorAttributeName();
+    colorAttribute->setName(Qt3DCore::QAttribute::defaultColorAttributeName());
+    colorAttribute->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
     colorAttribute->setBuffer(colorDataBuffer);
-    colorAttribute->setDataType(QAttribute::Float);
-    colorAttribute->setDataSize(3);
+    colorAttribute->setVertexBaseType(Qt3DCore::QAttribute::Float);
+    colorAttribute->setVertexSize(3);
     colorAttribute->setByteOffset(0);
     colorAttribute->setByteStride(3 * sizeof(float));
-    colorAttribute->setCount(colorsFlat.size());
+    colorAttribute->setCount((uint)colorsFlat.size());
     customGeometry->addAttribute(colorAttribute);
 
     // create the geometry renderer
