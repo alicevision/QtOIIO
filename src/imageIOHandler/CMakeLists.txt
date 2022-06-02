@@ -11,15 +11,9 @@ add_library(QtOIIOPlugin
     ${SOURCES_files_QtOIIO}
     )
 
-target_include_directories(QtOIIOPlugin
-    PUBLIC
-    ${OPENIMAGEIO_INCLUDE_DIRS}
-    ${OPENEXR_INCLUDE_DIR}
-    ${ILMBASE_INCLUDE_DIR}
-    )
 target_link_libraries(QtOIIOPlugin
     PUBLIC
-    ${OPENIMAGEIO_LIBRARIES}
+    OpenImageIO::OpenImageIO
     )
 
 target_link_libraries(QtOIIOPlugin

@@ -15,12 +15,10 @@ if(${QT_VERSION_MAJOR} EQUAL 6)
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
 
 # OpenImageIO
-find_package(OpenImageIO REQUIRED)
-if(OPENIMAGEIO_FOUND)
+find_package(OpenImageIO 2.0.9 REQUIRED)
+if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
     message(STATUS "OpenImageIO found.")
 else()
     message(SEND_ERROR "Failed to find OpenImageIO.")
