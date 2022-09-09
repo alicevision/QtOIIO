@@ -52,12 +52,4 @@ add_definitions(-DQT_NO_DEBUG_OUTPUT)
 add_definitions(-DQTOIIO_USE_FORMATS_BLACKLIST)
 
 add_subdirectory(src/imageIOHandler)
-
-# TODO: Make it works for Qt6
-# Add to Qt5 only for the moment since 3dcore
-# is not part of the distribution anymore.
-# Source: https://www.kdab.com/qt-3d-changes-in-qt-6/
-if(Qt5_FOUND)
-    add_subdirectory(src/depthMapEntity)
-endif()
-# add_subdirectory(src/depthMapEntity)
+add_subdirectory(src/depthMapEntity)
