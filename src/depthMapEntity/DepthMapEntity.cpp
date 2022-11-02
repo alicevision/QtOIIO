@@ -20,6 +20,7 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
+#include <cmath>
 #include <iostream>
 
 namespace oiio = OIIO;
@@ -331,7 +332,7 @@ void DepthMapEntity::loadDepthMap()
         {
             float depthValue = 0.0f;
             inBuf.getpixel(x, y, &depthValue, 1);
-            if(depthValue <= 0.f)
+            if(!isfinite(depthValue) || depthValue <= 0.f)
                 continue;
 
             point3d p = CArr + (iCamArr * point2d((double)x, (double)y)).normalize() * depthValue;
