@@ -335,7 +335,7 @@ void DepthMapEntity::loadDepthMap()
                 continue;
 
             point3d p = CArr + (iCamArr * point2d((double)x, (double)y)).normalize() * depthValue;
-            Vec3f position(p.x, p.y, p.z);
+            Vec3f position(p.x, -p.y, -p.z);
 
             indexPerPixel[y * inSpec.width + x] = positions.size();
             positions.push_back(position);
