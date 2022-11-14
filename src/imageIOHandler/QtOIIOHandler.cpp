@@ -78,8 +78,9 @@ bool QtOIIOHandler::read(QImage *image)
     // assert(nchannels == 1 || nchannels >= 3);
 
     oiio::ImageSpec configSpec;
+    
     // libRAW configuration
-    //configSpec.attribute("raw:user_flip", 0);
+    configSpec.attribute("raw:user_flip", 1);
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
 #if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
