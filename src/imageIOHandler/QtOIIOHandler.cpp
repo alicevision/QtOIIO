@@ -78,8 +78,9 @@ bool QtOIIOHandler::read(QImage *image)
     // assert(nchannels == 1 || nchannels >= 3);
 
     oiio::ImageSpec configSpec;
+    
     // libRAW configuration
-    //configSpec.attribute("raw:user_flip", 0);
+    configSpec.attribute("raw:user_flip", 1);
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
 #if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
@@ -407,7 +408,11 @@ QVariant QtOIIOHandler::option(ImageOption option) const
             return std::unique_ptr<oiio::ImageInput>(nullptr);
         }
         std::string path = d->fileName().toStdString();
-        return std::unique_ptr<oiio::ImageInput>(oiio::ImageInput::open(path));
+
+        oiio::ImageSpec configSpec;
+        configSpec.attribute("raw:user_flip", 1);
+
+        return std::unique_ptr<oiio::ImageInput>(oiio::ImageInput::open(path, &configSpec));
     };
 
     if (option == Size)
@@ -425,6 +430,7 @@ QVariant QtOIIOHandler::option(ImageOption option) const
         {
             return QImageIOHandler::TransformationNone;
         }
+
         // Translate OIIO transformations to QImageIOHandler::ImageTransformation
         switch(oiio::ImageBuf(imageInput->spec()).orientation())
         {
@@ -432,9 +438,9 @@ QVariant QtOIIOHandler::option(ImageOption option) const
         case 2: return QImageIOHandler::TransformationMirror; break;
         case 3: return QImageIOHandler::TransformationRotate180; break;
         case 4: return QImageIOHandler::TransformationFlip; break;
-        case 5: return QImageIOHandler::TransformationMirrorAndRotate90; break;
+        case 5: return QImageIOHandler::TransformationFlipAndRotate90; break;
         case 6: return QImageIOHandler::TransformationRotate90; break;
-        case 7: return QImageIOHandler::TransformationFlipAndRotate90; break;
+        case 7: return QImageIOHandler::TransformationMirrorAndRotate90; break;
         case 8: return QImageIOHandler::TransformationRotate270; break;
         }
     }
