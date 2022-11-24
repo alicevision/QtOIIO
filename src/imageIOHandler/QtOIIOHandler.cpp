@@ -408,7 +408,11 @@ QVariant QtOIIOHandler::option(ImageOption option) const
             return std::unique_ptr<oiio::ImageInput>(nullptr);
         }
         std::string path = d->fileName().toStdString();
-        return std::unique_ptr<oiio::ImageInput>(oiio::ImageInput::open(path));
+
+        oiio::ImageSpec configSpec;
+        configSpec.attribute("raw:user_flip", 1);
+
+        return std::unique_ptr<oiio::ImageInput>(oiio::ImageInput::open(path, &configSpec));
     };
 
     if (option == Size)
@@ -426,6 +430,7 @@ QVariant QtOIIOHandler::option(ImageOption option) const
         {
             return QImageIOHandler::TransformationNone;
         }
+
         // Translate OIIO transformations to QImageIOHandler::ImageTransformation
         switch(oiio::ImageBuf(imageInput->spec()).orientation())
         {
@@ -433,9 +438,9 @@ QVariant QtOIIOHandler::option(ImageOption option) const
         case 2: return QImageIOHandler::TransformationMirror; break;
         case 3: return QImageIOHandler::TransformationRotate180; break;
         case 4: return QImageIOHandler::TransformationFlip; break;
-        case 5: return QImageIOHandler::TransformationMirrorAndRotate90; break;
+        case 5: return QImageIOHandler::TransformationFlipAndRotate90; break;
         case 6: return QImageIOHandler::TransformationRotate90; break;
-        case 7: return QImageIOHandler::TransformationFlipAndRotate90; break;
+        case 7: return QImageIOHandler::TransformationMirrorAndRotate90; break;
         case 8: return QImageIOHandler::TransformationRotate270; break;
         }
     }
